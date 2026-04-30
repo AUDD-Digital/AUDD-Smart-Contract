@@ -1,42 +1,49 @@
 # Read Issue
 
-Read a GitHub issue, understand the problem, research the codebase, and produce a validated fix plan.
+Read a Jira issue, understand the problem, research the codebase, and produce a validated fix plan.
 
 ## Arguments
 
-The argument is a GitHub issue number, optionally prefixed with `#`. Examples: `#454`, `454`.
+The argument is a Jira issue key in the format `PROJECT-NUMBER`. Examples: `PROJ-454`, `STAB-123`.
 
 ## Steps
 
-### 1. Parse the issue number
+### 1. Parse the issue key
 
-Strip any leading `#` from the argument to get the issue number.
+Use the argument as-is. Validate it matches the `PROJECT-NUMBER` format. If only a number was passed, ask the user for the full issue key — Jira requires the project prefix.
 
-### 2. Read the GitHub issue
+### 2. Read the Jira issue
 
-Run `gh issue view <number>` to read the issue title, body, labels, and comments.
+Run `acli jira workitem view <key>` to read the issue summary, description, status, labels, and fields.
 
-- Check for image attachment URLs matching `https://github.com/user-attachments/assets/<asset-id>`. Download these with `gh-asset download <asset-id> ./screenshots/` and view them to understand the bug visually.
-- Check the issue labels and timeline for signs this issue has been **reopened**. If reopened, also run:
+- To include comments and full field detail, run:
   ```
-  gh issue timeline <number>
+  acli jira workitem view <key> --fields all
   ```
-  to understand the history.
+- Check the issue description and comments for image attachments. Jira attachments are referenced by filename. Download them with:
+  ```
+  acli jira workitem attachment download <key> --output ./screenshots/
+  ```
+  Then view the downloaded files to understand the bug visually.
+- Check the issue status history for signs this issue has been **reopened** (e.g., transitions back from Done/Closed to In Progress). Inspect the changelog with:
+  ```
+  acli jira workitem view <key> --fields changelog
+  ```
 
 ### 3. Check for prior fix attempts (reopened issues)
 
 If this issue was previously closed and reopened:
 
-1. Search for PRs that reference this issue:
+1. Search git log for commits that reference the issue key:
    ```
-   gh pr list --search "<number>" --state merged --json number,title,headRefName,mergeCommit --jq '.[]'
+   git log --all --grep="<key>" --oneline
    ```
-2. For each merged PR found, read the commits and changes to understand what was previously tried:
+2. For each matching commit, inspect the changes:
    ```
-   gh pr view <pr-number> --json commits,files
-   gh pr diff <pr-number>
+   git show <sha>
    ```
-3. Summarise what the previous fix attempted and why it may have been insufficient.
+3. If the project uses GitLab merge requests, search for merged MRs that reference the issue key in their title or description (the Jira key is typically embedded in branch names and MR titles).
+4. Summarise what the previous fix attempted and why it may have been insufficient.
 
 ### 4. Research the codebase
 
@@ -51,7 +58,7 @@ Wait for the research to complete before proceeding.
 
 ### 5. Formulate the fix plan
 
-Based on the issue details and codebase research, write a fix plan to `thoughts/fix-<number>.md` containing:
+Based on the issue details and codebase research, write a fix plan to `thoughts/fix-<key>.md` containing:
 
 - **Issue summary**: What the problem is, with reproduction steps if available
 - **Root cause**: What is causing the issue in the code
@@ -64,7 +71,7 @@ Based on the issue details and codebase research, write a fix plan to `thoughts/
 
 ### 6. Validate the plan
 
-Call `/validate_plan` with the path `thoughts/fix-<number>.md` to check:
+Call `/validate_plan` with the path `thoughts/fix-<key>.md` to check:
 
 - Will the fix actually resolve the issue?
 - Could the fix introduce new bugs or regressions?
@@ -84,7 +91,7 @@ Present to the user:
 5. **Validation result** — any concerns or impacts from the fix
 6. **Test plan** — what tests will be created or updated
 
-Ask the user if they would like to proceed with the fix using `/implement_plan thoughts/fix-<number>.md`.
+Ask the user if they would like to proceed with the fix using `/implement_plan thoughts/fix-<key>.md`.
 
 ## Rules
 
@@ -94,3 +101,4 @@ Ask the user if they would like to proceed with the fix using `/implement_plan t
 - Never skip the validation step.
 - Write the plan to `thoughts/` — it is not permanent documentation.
 - Do not start implementing — only plan and validate. The user decides when to implement.
+- If `acli` is not authenticated, prompt the user to run `acli jira auth login` before proceeding.

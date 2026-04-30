@@ -1,0 +1,79 @@
+{
+    "permissions": {
+        "allow": [
+            "Bash(playwright-cli:*)",
+            "Bash(gh-asset:*)",
+            "Bash(just:*)",
+            "Bash(PLAYWRIGHT_MCP_VIEWPORT_SIZE=*:*)",
+            "Bash(PLAYWRIGHT_MCP_CAPS=*:*)",
+            "Bash(mkdir -p screenshots:*)",
+            "Bash(mkdir -p ai_review:*)"
+        ],
+        "deny": [
+            "Read(**/.env)",
+            "Read(**/.env.*)",
+            "Read(**/.npmrc)",
+            "Read(**/.aws/**)",
+            "Read(**/*secret*)",
+            "Read(**/*.pem)",
+            "Read(**/*.key)",
+            "Bash(cat .env:*)",
+            "Bash(printenv*)",
+            "Bash(env *)"
+        ]
+    },
+    "plansDirectory": "thoughts",
+    "hooks": {
+        "SessionStart": [
+            {
+                "matcher": "",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/dev-env-check.sh",
+                        "timeout": 10,
+                        "statusMessage": "Checking dev environment"
+                    }
+                ]
+            }
+        ],
+        "PostToolUse": [
+            {
+                "matcher": "Edit|Write",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/biome-format.sh",
+                        "timeout": 30,
+                        "statusMessage": "Formatting with Biome"
+                    }
+                ]
+            }
+        ],
+        "Stop": [
+            {
+                "matcher": "",
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/check-types.sh",
+                        "timeout": 60,
+                        "statusMessage": "Checking TypeScript types"
+                    },
+                    {
+                        "type": "command",
+                        "command": "cd \"$CLAUDE_PROJECT_DIR\" && bun run test:unit 2>&1 | tail -20",
+                        "timeout": 120,
+                        "statusMessage": "Running backend unit tests"
+                    },
+                    {
+                        "type": "command",
+                        "command": "cd \"$CLAUDE_PROJECT_DIR\" && bun run test:frontend 2>&1 | tail -20",
+                        "timeout": 120,
+                        "statusMessage": "Running frontend tests"
+                    }
+                ]
+            }
+        ]
+    }
+}

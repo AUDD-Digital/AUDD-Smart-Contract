@@ -1,0 +1,18 @@
+name: AUDD-Smart-Contract
+id: ari:cloud:compass:033435a5-1581-4af5-88e2-30c6172c6ab6:component/7b4e73c7-5fa7-4e44-85a5-26705e0ff5e0/085125d0-83ca-4447-ba3a-06d811af9c20
+description: Smart Contracts for Ethereum and EVM compatible networks
+configVersion: 1
+typeId: DATASET
+ownerId: null
+fields:
+  tier: 4
+links:
+  - name: null
+    type: REPOSITORY
+    url: https://github.com/AUDD-Digital/AUDD-Smart-Contract
+relationships:
+  DEPENDS_ON: []
+labels:
+  - language:solidity
+  - source:github
+customFields: null
